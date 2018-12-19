@@ -87,7 +87,10 @@ class Main extends egret.DisplayObjectContainer {
     }
 
     private textfield: egret.TextField;
-
+    private frog:egret.Bitmap;
+    private topMask:egret.Shape;
+    // private touchCount: number;
+    private touchTimer: egret.Timer;
     /**
      * 创建游戏场景
      * Create a game scene
@@ -99,13 +102,6 @@ class Main extends egret.DisplayObjectContainer {
         let stageH = this.stage.stageHeight;
         sky.width = stageW;
         sky.height = stageH;
-
-        let topMask = new egret.Shape();
-        topMask.graphics.beginFill(0x000000, 0.5);
-        topMask.graphics.drawRect(0, 0, stageW, 172);
-        topMask.graphics.endFill();
-        topMask.y = 33;
-        this.addChild(topMask);
 
         let icon = this.createBitmapByName("egret_icon_png");
         this.addChild(icon);
@@ -144,6 +140,65 @@ class Main extends egret.DisplayObjectContainer {
         this.textfield = textfield;
 
 
+        this.frog = this.createBitmapByName("frog_jpg");
+        this.addChild(this.frog);
+        this.frog.width = this.frog.height = 100;
+        this.frog.y = stageH - 100;
+        this.frog.x = 0.5 * stageW;
+        
+        this.touchTimer = new egret.Timer(100, 0);
+        this.touchTimer.addEventListener("timer", this.onTouchTimer, this);
+
+        this.topMask = new egret.Shape();
+        this.topMask.graphics.beginFill(0x000000, 0.5);
+        this.topMask.graphics.drawRect(0, 0, stageW, 172);
+        this.topMask.graphics.endFill();
+        this.topMask.y = 33;
+        this.addChild(this.topMask);
+        this.topMask.$touchEnabled = true;
+        this.topMask.addEventListener("touchBegin", (z, e)=> {
+            console.warn("touchBegin now");
+            this.topMask.$alpha = 0.7;
+            this.touchTimer.start();
+        }, this);
+
+        this.topMask.addEventListener("touchEnd", (z, e)=> {
+            console.warn("touchEnd now");
+            this.topMask.$alpha = 0.5;
+            this.currentVelocity = this.touchTimer.currentCount;
+            this.jumping = true;
+            console.log(this.currentVelocity + " now spd");
+            this.touchTimer.stop();
+            this.touchTimer.reset();
+        }, this);
+
+        this.addEventListener(egret.Event.ENTER_FRAME, this.onEnterFrame, this);
+    }
+
+    private onTouchTimer(e: egret.TimerEvent): void { 
+        // console.log((<egret.Timer>e.target).currentCount);
+        this.topMask.alpha = 0.1 * (<egret.Timer>e.target).currentCount;
+    }
+
+    private onEnterFrame(e: egret.Event) {
+        if(this.jumping == true)
+            this.jump();
+    }
+
+    private gravity: number = 0.9;
+    private currentVelocity: number = 0;
+    private jumping: boolean = false;
+
+    private jump() {
+        console.log(this.currentVelocity);
+        if(this.frog.y <= this.stage.stageHeight - 100) {
+            this.currentVelocity -= this.gravity;
+            this.frog.y -= this.currentVelocity;
+        } else {
+            this.currentVelocity = 0;
+            this.frog.y = this.stage.stageHeight - 100;
+            this.jumping = false;
+        }
     }
 
     /**
@@ -185,5 +240,9 @@ class Main extends egret.DisplayObjectContainer {
         };
 
         change();
+    }
+
+    private flyStartAnimation(){
+        
     }
 }

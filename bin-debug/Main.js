@@ -75,6 +75,9 @@ var Main = (function (_super) {
     __extends(Main, _super);
     function Main() {
         var _this = _super.call(this) || this;
+        _this.gravity = 0.9;
+        _this.currentVelocity = 0;
+        _this.jumping = false;
         _this.addEventListener(egret.Event.ADDED_TO_STAGE, _this.onAddToStage, _this);
         return _this;
     }
@@ -150,18 +153,13 @@ var Main = (function (_super) {
      * Create a game scene
      */
     Main.prototype.createGameScene = function () {
+        var _this = this;
         var sky = this.createBitmapByName("bg_jpg");
         this.addChild(sky);
         var stageW = this.stage.stageWidth;
         var stageH = this.stage.stageHeight;
         sky.width = stageW;
         sky.height = stageH;
-        var topMask = new egret.Shape();
-        topMask.graphics.beginFill(0x000000, 0.5);
-        topMask.graphics.drawRect(0, 0, stageW, 172);
-        topMask.graphics.endFill();
-        topMask.y = 33;
-        this.addChild(topMask);
         var icon = this.createBitmapByName("egret_icon_png");
         this.addChild(icon);
         icon.x = 26;
@@ -193,6 +191,55 @@ var Main = (function (_super) {
         textfield.x = 172;
         textfield.y = 135;
         this.textfield = textfield;
+        this.frog = this.createBitmapByName("frog_jpg");
+        this.addChild(this.frog);
+        this.frog.width = this.frog.height = 100;
+        this.frog.y = stageH - 100;
+        this.frog.x = 0.5 * stageW;
+        this.touchTimer = new egret.Timer(100, 0);
+        this.touchTimer.addEventListener("timer", this.onTouchTimer, this);
+        this.topMask = new egret.Shape();
+        this.topMask.graphics.beginFill(0x000000, 0.5);
+        this.topMask.graphics.drawRect(0, 0, stageW, 172);
+        this.topMask.graphics.endFill();
+        this.topMask.y = 33;
+        this.addChild(this.topMask);
+        this.topMask.$touchEnabled = true;
+        this.topMask.addEventListener("touchBegin", function (z, e) {
+            console.warn("touchBegin now");
+            _this.topMask.$alpha = 0.7;
+            _this.touchTimer.start();
+        }, this);
+        this.topMask.addEventListener("touchEnd", function (z, e) {
+            console.warn("touchEnd now");
+            _this.topMask.$alpha = 0.5;
+            _this.currentVelocity = _this.touchTimer.currentCount;
+            _this.jumping = true;
+            console.log(_this.currentVelocity + " now spd");
+            _this.touchTimer.stop();
+            _this.touchTimer.reset();
+        }, this);
+        this.addEventListener(egret.Event.ENTER_FRAME, this.onEnterFrame, this);
+    };
+    Main.prototype.onTouchTimer = function (e) {
+        // console.log((<egret.Timer>e.target).currentCount);
+        this.topMask.alpha = 0.1 * e.target.currentCount;
+    };
+    Main.prototype.onEnterFrame = function (e) {
+        if (this.jumping == true)
+            this.jump();
+    };
+    Main.prototype.jump = function () {
+        console.log(this.currentVelocity);
+        if (this.frog.y <= this.stage.stageHeight - 100) {
+            this.currentVelocity -= this.gravity;
+            this.frog.y -= this.currentVelocity;
+        }
+        else {
+            this.currentVelocity = 0;
+            this.frog.y = this.stage.stageHeight - 100;
+            this.jumping = false;
+        }
     };
     /**
      * 根据name关键字创建一个Bitmap对象。name属性请参考resources/resource.json配置文件的内容。
@@ -234,3 +281,4 @@ var Main = (function (_super) {
     return Main;
 }(egret.DisplayObjectContainer));
 __reflect(Main.prototype, "Main");
+//# sourceMappingURL=Main.js.map
